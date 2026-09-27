@@ -3,8 +3,8 @@
 ## Worksheet 1 of 2: Context and Story 1
 
 **Team / product / members / date**
-* Team/Product: InhaAssist
-* Members: [Student 1], [Student 2], [Student 3]
+* Team 10 /Product: InhaAssist
+* Members: Zikrilloh, Tuymurod
 * Date: 2026-09-27
 
 **M1 input: user and problem; feedback received or "No feedback yet"**
@@ -57,19 +57,19 @@ The user has 10 minutes to reach their next class located in a building listed o
 * Reason: Too technically complex for V1; requires advanced indoor positioning infrastructure.
 
 **Review the document, then save it**
-* [x] Both stories relate to the same stated user task and scenario.
-* [x] Each criterion has a result another person could inspect.
-* [x] Assumptions, agreed draft rules, and open questions are distinguishable.
-* [x] The document describes expected behavior without inventing test results.
+* [O] Both stories relate to the same stated user task and scenario.
+* [O] Each criterion has a result another person could inspect.
+* [O] Assumptions, agreed draft rules, and open questions are distinguishable.
+* [O] The document describes expected behavior without inventing test results.
 
 **Reviewer; ambiguity found; change made (or reason no change was needed)**
-* Reviewer: [Student 2]
+* Reviewer: Tuymurod
 * Ambiguity found: "Map" in S1 was ambiguous (is it Google Maps, Kakao, or custom?). 
 * Change made: Left as "map" in the story to keep it user-focused, but noted Kakao Maps API integration in our technical notes.
 
 **Saved file/location or commit link; person who reopened and checked it**
-* File: `M2_story_slice.md` saved in shared Google Drive / GitHub repo.
-* Checked by: [Student 3]
+* File: `M2_story_slice.md` saved in GitHub repo. link: https://github.com/jiki007/InhaStudentAsistant
+* Checked by: [Tuymurod]
 
 **AI use**
 * AI Use: Used Google Gemini to assist in drafting acceptance criteria formats and formulating the markdown document based on our M1 context.
