@@ -1,0 +1,15 @@
+{
+  "name": "inha-assist",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mobile-first English campus directory for Inha University international students (ISE4133 Team 10).",
+  "scripts": {
+    "test": "node --test test/search.test.js",
+    "e2e": "node test/e2e.mjs",
+    "e2e:offline": "node test/e2e.mjs --offline",
+    "start": "npx --yes serve -l 8080 ."
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InhaAssist</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <h1>InhaAssist</h1>
+    <p class="tag">Find Inha buildings and rooms in English</p>
+  </header>
+
+  <main>
+    <!-- S1: building search -->
+    <form id="search-form" class="search" role="search" autocomplete="off">
+      <label for="search-input" class="sr-only">Building name or code</label>
+      <input id="search-input" name="q" type="search"
+             placeholder="e.g. 60th Anniversary, 60주년기념관, Hi-Tech"
+             maxlength="60" data-testid="search-input">
+      <button type="submit" data-testid="search-submit">Search</button>
+    </form>
+
+    <p id="message" class="message" role="status" aria-live="polite" data-testid="message"></p>
+    <ul id="choices" class="choices" data-testid="choices" hidden></ul>
+
+    <section id="map-wrap" class="map-wrap">
+      <div id="map" data-testid="map" aria-label="Campus map"></div>
+    </section>
+
+    <section id="building-card" class="card" data-testid="building-card" hidden>
+      <h2 id="building-name" data-testid="building-name"></h2>
+      <p id="building-ko" class="ko"></p>
+      <p id="building-houses" class="houses" data-testid="building-houses"></p>
+      <p class="note" id="coord-note"></p>
+      <button id="view-directory" type="button" data-testid="view-directory">View Directory</button>
+    </section>
+
+    <!-- S2: floor directory -->
+    <section id="directory" class="card" data-testid="directory" hidden>
+      <div class="dir-head">
+        <h2>Floor directory</h2>
+        <span class="badge" id="data-badge"></span>
+      </div>
+      <label for="room-filter" class="sr-only">Filter by room number</label>
+      <input id="room-filter" type="search" inputmode="numeric"
+             placeholder="Filter by room number, e.g. 302" data-testid="room-filter">
+      <ol id="floor-list" class="floors" data-testid="floor-list"></ol>
+      <p id="dir-empty" class="message" data-testid="dir-empty" hidden></p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    Prototype for ISE4133 · Team 10 · Positions from Google Maps, not yet checked on campus. Some room lists are sample data.
+  </footer>
+
+  <!-- Leaflet from CDN; app.js falls back to a simple offline map if it fails to load. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="data/buildings.js"></script>
+  <script src="src/search.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

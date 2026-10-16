@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InhaAssist Coordinate Picker</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <style>
+    :root { --brand:#0b4ea2; --line:#dde2e8; --muted:#5b6676; --ok:#1a7f37; --warn:#b26a00; --miss:#b42318; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color:#1b2430; background:#f6f7f9; }
+    header { background:var(--brand); color:#fff; padding:10px 16px; }
+    header h1 { margin:0; font-size:1.1rem; }
+    header p { margin:2px 0 0; font-size:.85rem; opacity:.9; }
+    .wrap { display:flex; height:calc(100vh - 56px); }
+    aside { width:340px; min-width:280px; overflow:auto; border-right:1px solid var(--line); background:#fff; }
+    #map { flex:1; }
+    .steps { padding:10px 14px; font-size:.85rem; color:var(--muted); border-bottom:1px solid var(--line); }
+    .steps ol { margin:4px 0 0; padding-left:18px; }
+    .bar { display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; align-items:center; }
+    button { font:inherit; font-weight:600; padding:8px 12px; border-radius:8px; border:0; background:var(--brand); color:#fff; cursor:pointer; }
+    button.ghost { background:#fff; color:var(--brand); border:1px solid var(--brand); }
+    .count { font-size:.85rem; color:var(--muted); }
+    ul { list-style:none; margin:0; padding:0; }
+    li { padding:9px 14px; border-bottom:1px solid var(--line); cursor:pointer; display:flex; gap:8px; align-items:flex-start; }
+    li:hover { background:#f2f6fb; }
+    li.sel { background:#e3edf9; outline:2px solid var(--brand); outline-offset:-2px; }
+    .dot { width:10px; height:10px; border-radius:50%; margin-top:5px; flex:none; }
+    .name { font-weight:600; font-size:.92rem; }
+    .ko { color:var(--muted); font-size:.85rem; }
+    .st { font-size:.75rem; }
+    .missing { background:var(--miss); } .approximate { background:var(--warn); } .map, .verified { background:var(--ok); }
+    #hint { position:absolute; z-index:1000; left:50%; transform:translateX(-50%); top:66px; background:#1b2430; color:#fff;
+            padding:8px 14px; border-radius:999px; font-size:.9rem; pointer-events:none; }
+    @media (max-width: 700px) { .wrap { flex-direction:column; height:auto; } aside { width:auto; max-height:45vh; } #map { height:55vh; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>InhaAssist Coordinate Picker</h1>
+    <p>Team tool. Click a building in the list, then click the middle of its roof on the map.</p>
+  </header>
+  <div id="hint">Choose a building in the list</div>
+  <div class="wrap">
+    <aside>
+      <div class="steps">
+        <ol>
+          <li style="display:list-item;padding:0;border:0;cursor:default">Pick a building (red = no position yet, orange = rough guess).</li>
+          <li style="display:list-item;padding:0;border:0;cursor:default">Switch to <b>Satellite</b> (top right of the map) and click the roof's center. Drag the pin to adjust.</li>
+          <li style="display:list-item;padding:0;border:0;cursor:default">When finished, press <b>Download buildings.js</b> and replace <code>data/buildings.js</code> with it.</li>
+        </ol>
+        Progress is saved in this browser, so you can stop and continue later.
+      </div>
+      <div class="bar">
+        <button id="download">Download buildings.js</button>
+        <button id="reset" class="ghost" title="Forget clicks made in this browser">Reset</button>
+        <span class="count" id="count"></span>
+      </div>
+      <ul id="list"></ul>
+    </aside>
+    <div id="map"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="../data/buildings.js"></script>
+  <script>
+  (function () {
+    var KEY = "inhaassist-picks-v1";
+    var DATA = JSON.parse(JSON.stringify(window.INHA_BUILDINGS)); // working copy
+    var picks = {};
+    try { picks = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { picks = {}; }
+    DATA.forEach(function (b) {
+      var p = picks[b.id];
+      if (p) { b.lat = p[0]; b.lng = p[1]; b.coordStatus = "map"; }
+    });
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(picks)); } catch (e) {} }
+
+    var map = L.map("map").setView([37.4505, 126.6545], 17);
+    var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" });
+    var sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19, attribution: "Tiles &copy; Esri" });
+    osm.addTo(map);
+    L.control.layers({ "Map (OpenStreetMap)": osm, "Satellite (Esri)": sat }).addTo(map);
+
+    var markers = {};
+    var selected = null;
+    var colors = { missing: "#b42318", approximate: "#b26a00", map: "#1a7f37", verified: "#1a7f37" };
+
+    function icon(b, sel) {
+      var c = colors[b.coordStatus] || "#5b6676";
+      return L.divIcon({ className: "", iconSize: [18, 18], iconAnchor: [9, 9],
+        html: '<div style="width:' + (sel ? 18 : 14) + 'px;height:' + (sel ? 18 : 14) + 'px;border-radius:50%;background:' + c +
+              ';border:3px solid ' + (sel ? "#0b4ea2" : "#fff") + ';box-shadow:0 0 0 1px #0004"></div>' });
+    }
+
+    function place(b) {
+      if (typeof b.lat !== "number") return;
+      if (markers[b.id]) { markers[b.id].setLatLng([b.lat, b.lng]).setIcon(icon(b, b === selected)); return; }
+      var m = L.marker([b.lat, b.lng], { draggable: true, icon: icon(b, b === selected), title: b.nameEn }).addTo(map);
+      m.bindTooltip(b.nameEn + " · " + b.nameKo);
+      m.on("click", function () { select(b); });
+      m.on("dragend", function () { var ll = m.getLatLng(); setPos(b, ll.lat, ll.lng); });
+      markers[b.id] = m;
+    }
+
+    function setPos(b, lat, lng) {
+      b.lat = +lat.toFixed(6); b.lng = +lng.toFixed(6); b.coordStatus = "map";
+      picks[b.id] = [b.lat, b.lng]; save();
+      place(b); render();
+    }
+
+    function select(b) {
+      selected = b;
+      DATA.forEach(function (x) { if (markers[x.id]) markers[x.id].setIcon(icon(x, x === b)); });
+      if (typeof b.lat === "number") map.panTo([b.lat, b.lng]);
+      document.getElementById("hint").textContent = "Click the roof of: " + b.nameEn + " (" + b.nameKo + ")";
+      render();
+    }
+
+    map.on("click", function (e) {
+      if (!selected) return;
+      setPos(selected, e.latlng.lat, e.latlng.lng);
+      // move on to the next building without a precise position
+      var next = DATA.filter(function (x) { return x.coordStatus === "missing" || x.coordStatus === "approximate"; })[0];
+      if (next) select(next); else { selected = null; document.getElementById("hint").textContent = "All buildings placed. Download buildings.js"; render(); }
+    });
+
+    function render() {
+      var ul = document.getElementById("list");
+      ul.innerHTML = "";
+      DATA.forEach(function (b) {
+        var li = document.createElement("li");
+        if (b === selected) li.className = "sel";
+        var dot = document.createElement("span"); dot.className = "dot " + b.coordStatus;
+        var box = document.createElement("div");
+        var n = document.createElement("div"); n.className = "name"; n.textContent = (b.mapNo ? "#" + b.mapNo + " " : "") + b.nameEn;
+        var k = document.createElement("div"); k.className = "ko"; k.textContent = b.nameKo;
+        var s = document.createElement("div"); s.className = "st";
+        s.textContent = b.coordStatus === "missing" ? "no position" :
+                        b.coordStatus + (typeof b.lat === "number" ? " · " + b.lat + ", " + b.lng : "");
+        box.appendChild(n); box.appendChild(k); box.appendChild(s);
+        li.appendChild(dot); li.appendChild(box);
+        li.addEventListener("click", function () { select(b); });
+        ul.appendChild(li);
+      });
+      var done = DATA.filter(function (b) { return b.coordStatus === "map" || b.coordStatus === "verified"; }).length;
+      document.getElementById("count").textContent = done + " / " + DATA.length + " placed";
+    }
+
+    document.getElementById("download").addEventListener("click", function () {
+      var today = new Date().toISOString().slice(0, 10);
+      var text =
+        "/*\n * InhaAssist building data — generated by tools/pick-coordinates.html on " + today + ".\n" +
+        " * coordStatus: missing | approximate (rough guess) | map (clicked on map imagery) | verified (checked on campus).\n" +
+        " * Room lists with dataStatus \"sample\" are made-up test data.\n" +
+        " * Loaded as a classic script (works from file://); exported with module.exports in Node.\n */\n" +
+        "(function (root) {\n  var BUILDINGS = " + JSON.stringify(DATA, null, 2).replace(/\n/g, "\n  ") + ";\n\n" +
+        "  if (typeof module !== \"undefined\" && module.exports) {\n    module.exports = BUILDINGS;\n  } else {\n" +
+        "    root.INHA_BUILDINGS = BUILDINGS;\n  }\n})(this);\n";
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type: "text/javascript" }));
+      a.download = "buildings.js";
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+
+    document.getElementById("reset").addEventListener("click", function () {
+      picks = {}; save(); location.reload();
+    });
+
+    DATA.forEach(place);
+    render();
+    var first = DATA.filter(function (x) { return x.coordStatus === "missing" || x.coordStatus === "approximate"; })[0];
+    if (first) select(first);
+  })();
+  </script>
+</body>
+</html>

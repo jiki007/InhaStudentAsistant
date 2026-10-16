@@ -1,0 +1,12 @@
+# npm run e2e:offline — 2026-10-16T09:24:13Z — Chromium headless, 390x844 mobile viewport
+map: fallback
+PASS S1-AC1 '60th Anniversary' pins 60th Anniversary Hall
+PASS S1-AC1 Korean '60주년기념관' pins the same building
+PASS S1-AC2 'XYZ99' shows 'Unrecognized building code'
+PASS S2-AC1 View Directory shows floor-by-floor English list
+PASS S2-AC2 filter '302' shows only room 302 on floor 3
+PASS S2 rule: building without floor data shows disabled button
+PASS Security: HTML in the search box is shown as text, not executed
+PASS Mobile: no horizontal scroll at 390px width
+
+All checks passed

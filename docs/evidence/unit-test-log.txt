@@ -1,0 +1,23 @@
+# npm test — 2026-10-16T09:24:12Z — node v22.22.0
+ok 1 - S1-AC1: '60th Anniversary' finds 60th Anniversary Hall
+ok 2 - S1-AC1 (added): Korean name '60주년기념관' from the schedule finds the same building
+ok 3 - S1-AC1: case, spaces and hyphens do not matter
+ok 4 - S1-AC1: every building is reachable by its English and Korean name
+ok 5 - S1-AC2: unrecognized code 'XYZ99' returns not-found
+ok 6 - S1: empty or whitespace query returns empty (no error shown)
+ok 7 - S1: ambiguous query 'Building' returns a list to choose from
+ok 8 - S2-AC1: directory lists floors bottom-to-top, every room has an English name
+ok 9 - S2-AC2: filter '302' shows only room 302 on floor 3
+ok 10 - S2-AC2: filter with no match returns an empty list
+ok 11 - S2 rule: building without floor data has no directory
+ok 12 - Data: ids unique; every position is inside the Inha campus area
+ok 13 - Data: the 24 numbered places of the official campus map are listed, numbers unique
+ok 14 - S1: wing codes from schedules find the building ('2남' -> Building \#2, '5서' -> Building \#5)
+ok 15 - S1: official English map names work ('West Building' = 서호관, 'Student Center' = 학생회관)
+ok 16 - S2: real rooms from the campus map can be filtered ('502B' -> Global Education Center, 5F)
+ok 17 - S1: a building without a map position is still found by search
+ok 18 - Data: every building has a position, and no two are within 10 m (catches copy-paste mistakes)
+ok 19 - Data: no two buildings share an alias (avoids wrong pins)
+# tests 19
+# pass 19
+# fail 0
